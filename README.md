@@ -16,14 +16,14 @@ const AdminAuth: React.FC<ChildrenProp> = ({ children }) => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID
 
-  const baseAuthUri = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0`
+  const baseAuthUri = `https://login.microsoftonline.com/${tenantId}`
 
   return (
     <AuthProvider
       authority={baseAuthUri}
       clientId={process.env.NEXT_PUBLIC_CLIENT_ID as string}
       redirectUri={`${appUrl}/login/callback`}
-      logoutRedirectUri={`${baseAuthUri}/logout?post_logout_redirect_uri=${appUrl}/logout/success`}
+      postLogoutRedirectUri={`${appUrl}/logout/success`}
       scope={`openid profile email offline_access YOUR_CUSTOM_SCOPES`}
       cacheStrategy="localStorage"
     >
