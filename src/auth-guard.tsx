@@ -3,13 +3,13 @@ import { ChildrenProp } from './types/children-prop'
 import { useAuth } from './use-auth'
 
 type Props = {
-  whitelistedPaths: string[]
-  currentPathName: string
+  whitelistedPaths?: string[]
+  currentPathName?: string
 } & ChildrenProp
 
 export const AuthGuard: React.FC<Props> = ({
-  whitelistedPaths,
-  currentPathName,
+  whitelistedPaths = [],
+  currentPathName = '',
   children,
 }) => {
   const { isAuthenticated, isLoading, redirectToLogin } = useAuth()

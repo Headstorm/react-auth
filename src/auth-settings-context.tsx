@@ -6,16 +6,11 @@ export type User = {
   [key: string]: any
 }
 
-export interface AuthEndpoints {
-  authorizationEndpoint: string
-  tokenEndpoint: string
-}
-
 export interface AuthSettings {
-  endpoints: AuthEndpoints
+  authority: string
   clientId: string
   redirectUri: string
-  logoutRedirectUri: string
+  postLogoutRedirectUri?: string
   scope: string
   audience?: string
   cacheStrategy: AuthCacheStrategy
@@ -23,13 +18,9 @@ export interface AuthSettings {
 }
 
 const AuthSettingsContext = createContext<AuthSettings>({
-  endpoints: {
-    authorizationEndpoint: '',
-    tokenEndpoint: '',
-  },
+  authority: '',
   clientId: '',
   redirectUri: '',
-  logoutRedirectUri: '',
   scope: '',
   cacheStrategy: 'localStorage',
   cachePrefix: '',

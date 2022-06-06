@@ -3,6 +3,7 @@
 OAuth2 + OpenID connect client library for React with support for authorization code flow with PKCE.
 
 ## Getting Started
+
 1. Wrap your application in an AuthProvider with the config of your auth server. You can optionally include an AuthGuard which prevents unauthenticated access to any page on your app expect for those explicitly listed.
 
 ```tsx
@@ -14,15 +15,12 @@ const AdminAuth: React.FC<ChildrenProp> = ({ children }) => {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID
-  
+
   const baseAuthUri = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0`
 
   return (
     <AuthProvider
-      endpoints={{
-        authorizationEndpoint: `${baseAuthUri}/authorize`,
-        tokenEndpoint: `${baseAuthUri}/token`,
-      }}
+      authority={baseAuthUri}
       clientId={process.env.NEXT_PUBLIC_CLIENT_ID as string}
       redirectUri={`${appUrl}/login/callback`}
       logoutRedirectUri={`${baseAuthUri}/logout?post_logout_redirect_uri=${appUrl}/logout/success`}
@@ -30,7 +28,12 @@ const AdminAuth: React.FC<ChildrenProp> = ({ children }) => {
       cacheStrategy="localStorage"
     >
       <AuthGuard
-        whitelistedPaths={['/login', '/login/callback', '/logout/success', '/logout']}
+        whitelistedPaths={[
+          '/login',
+          '/login/callback',
+          '/logout/success',
+          '/logout',
+        ]}
         currentPathName={router.pathname}
       >
         {children}
@@ -39,9 +42,11 @@ const AdminAuth: React.FC<ChildrenProp> = ({ children }) => {
   )
 }
 ```
-*This example uses Next.js as a React framework and Azure AD as the OAuth server, but the same pattern applies regardless of Next.js or OAuth server.*
+
+_This example uses Next.js as a React framework and Azure AD as the OAuth server, but the same pattern applies regardless of Next.js or OAuth server._
 
 2. Create your /login/callback page to handle exchanging the authorization code for an access token.
+
 ```tsx
 // pages/login/callback.tsx
 const AuthCallback: React.FC = () => {
@@ -68,6 +73,7 @@ export default AuthCallback
 The `useAuthCallback()` hook will automatically look for the authorization code in the URL, exchange it for an access token, and redirect the user to their original destination.
 
 3. Create a logout success page that the user should be redirected to once they've successfully logged out.
+
 ```tsx
 const LogoutSuccess: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth()
@@ -80,9 +86,7 @@ const LogoutSuccess: React.FC = () => {
   }, [isAuthenticated, router])
 
   if (!isLoading && !isAuthenticated) {
-    return (
-      <p>You've been logged out!</p>
-    )
+    return <p>You've been logged out!</p>
   }
 
   return null
@@ -92,6 +96,7 @@ const LogoutSuccess: React.FC = () => {
 4. The user is successfully authenticated! You can retrieve the access token by invoking the `getAccessTokenSilently()` function returned by the `useAuth()` hook.
 
 Example using Apollo Client:
+
 ```tsx
 export const AuthorizedApolloProvider: React.FC<Props> = ({ children }) => {
   const { isAuthenticated, getAccessTokenSilently } = useAuth()
@@ -124,6 +129,7 @@ export const AuthorizedApolloProvider: React.FC<Props> = ({ children }) => {
 ```
 
 4. Optionally setup /login and /logout pages that redirects the user into the appropriate login/logout flows.
+
 ```tsx
 // pages/login/index.tsx
 const Login: React.FC = () => {
@@ -131,18 +137,18 @@ const Login: React.FC = () => {
   const router = useRouter()
 
   useEffect(() => {
-    ;(async () => {
-      if (isLoading) {
-        return
-      }
+    if (isLoading) {
+      return
+    }
 
-      if (isAuthenticated) {
-        await router.push('/')
-        return
-      }
+    if (isAuthenticated) {
+      router.push('/')
+      return
+    }
 
-      await redirectToLogin()
-    })()
+    redirectToLogin({
+      loginSuccessRedirectUri: '/',
+    })
   }, [isAuthenticated, isLoading, redirectToLogin, router])
 
   return null

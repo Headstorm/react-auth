@@ -36,14 +36,8 @@ export const useAuthCache = (): {
   const { cache, setCache, isLoading } = useContext(AuthCacheContext)
 
   const setAuthTokens = useCallback(
-    ({ accessToken, idToken, refreshToken, scope }: AuthTokens) => {
-      const accessTokenClaims = parseJwt(accessToken)
+    ({ accessToken, idToken, refreshToken, scope, expiresIn }: AuthTokens) => {
       const idClaims = parseJwt(idToken)
-
-      if (!accessTokenClaims) {
-        console.error('The access token could not be parsed.')
-        return
-      }
 
       if (!idClaims) {
         console.error('The id token could not be parsed.')
@@ -52,12 +46,14 @@ export const useAuthCache = (): {
 
       const existingAccessTokens = getAuthCache()?.accessTokens || {}
 
+      const currentTimestamp = Math.floor(new Date().getTime() / 1000)
+
       const authCache: AuthCache = {
         accessTokens: {
           ...existingAccessTokens,
           [scope]: {
             token: accessToken,
-            expireTime: parseInt(accessTokenClaims.exp),
+            expireTime: currentTimestamp + expiresIn,
           },
         },
         idToken,

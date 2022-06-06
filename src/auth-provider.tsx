@@ -7,10 +7,10 @@ import { Optional } from './types/optional'
 type AuthProviderProps = Optional<AuthSettings, 'cachePrefix'> & ChildrenProp
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
-  endpoints,
+  authority,
   clientId,
   redirectUri,
-  logoutRedirectUri,
+  postLogoutRedirectUri,
   scope,
   audience,
   cacheStrategy,
@@ -19,28 +19,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 }) => {
   const authSettings = useMemo<AuthSettings>(() => {
     return {
-      endpoints: {
-        authorizationEndpoint: endpoints.authorizationEndpoint,
-        tokenEndpoint: endpoints.tokenEndpoint,
-      },
+      authority,
       clientId,
       redirectUri,
-      logoutRedirectUri,
+      postLogoutRedirectUri,
       scope,
       audience,
       cacheStrategy,
       cachePrefix,
     }
-  }, [
-    cachePrefix,
-    cacheStrategy,
-    clientId,
-    endpoints.authorizationEndpoint,
-    endpoints.tokenEndpoint,
-    logoutRedirectUri,
-    redirectUri,
-    scope,
-  ])
+  }, [cachePrefix, cacheStrategy, clientId, authority, redirectUri, scope])
 
   return (
     <AuthSettingsProvider settings={authSettings}>

@@ -20,11 +20,10 @@ export default defineConfig([
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
-          crypto: 'crypto',
         },
       },
     ],
-    external: ['react', 'crypto'],
+    external: ['react'],
     watch: {
       include: 'src/**',
     },

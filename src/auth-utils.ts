@@ -1,11 +1,24 @@
-import { nanoid } from 'nanoid'
 import { AuthSettings } from './auth-settings-context'
+import { getOpenIDConfiguration } from './openid-configuration'
 
 export interface AuthTokens {
   accessToken: string
   idToken: string
   refreshToken: string
   scope: string
+  expiresIn: number
+}
+
+function randomId(length: number): string {
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+  let result = ''
+  for (var i = 0; i < length; i++) {
+    result += alphabet.charAt(Math.floor(Math.random() * alphabet.length))
+  }
+
+  return result
 }
 
 export async function getAuthorizationRequest({
@@ -17,12 +30,13 @@ export async function getAuthorizationRequest({
   codeVerifier: string
   authRedirectUri: string
 }> {
-  const state = nanoid()
-  const codeVerifier = nanoid(128)
+  const state = randomId(18)
+  const codeVerifier = randomId(128)
   const codeChallenge = await generateCodeChallengeFromVerifier(codeVerifier)
+  const openIdConfig = await getOpenIDConfiguration(settings.authority)
 
   const authRedirectUri =
-    settings.endpoints.authorizationEndpoint +
+    openIdConfig.authorization_endpoint +
     `?client_id=${settings.clientId}` +
     `&response_type=code` +
     `&redirect_uri=${settings.redirectUri}` +
@@ -49,6 +63,8 @@ export async function redeemToken({
   codeVerifier: string
   settings: AuthSettings
 }): Promise<AuthTokens | null> {
+  const openIdConfig = await getOpenIDConfiguration(settings.authority)
+
   const body = {
     client_id: settings.clientId,
     scope: settings.scope,
@@ -58,7 +74,7 @@ export async function redeemToken({
     code_verifier: codeVerifier,
   }
 
-  const res = await fetch(settings.endpoints.tokenEndpoint, {
+  const res = await fetch(openIdConfig.token_endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -73,6 +89,7 @@ export async function redeemToken({
     idToken: data.id_token,
     refreshToken: data.refresh_token,
     scope: body.scope,
+    expiresIn: parseInt(data.expires_in),
   }
 }
 
@@ -85,6 +102,8 @@ export async function refreshToken({
   settings: AuthSettings
   scope?: string
 }): Promise<AuthTokens> {
+  const openIdConfig = await getOpenIDConfiguration(settings.authority)
+
   const tokenParameters = {
     client_id: settings.clientId,
     scope: scope,
@@ -92,7 +111,7 @@ export async function refreshToken({
     grant_type: 'refresh_token',
   }
 
-  const res = await fetch(settings.endpoints.tokenEndpoint, {
+  const res = await fetch(openIdConfig.token_endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -107,10 +126,11 @@ export async function refreshToken({
   }
 
   return {
-    accessToken: data.access_token as string,
-    idToken: data.id_token as string,
-    refreshToken: data.refresh_token as string,
+    accessToken: data.access_token,
+    idToken: data.id_token,
+    refreshToken: data.refresh_token,
     scope,
+    expiresIn: parseInt(data.expires_in),
   }
 }
 
@@ -126,11 +146,7 @@ function base64UrlEncode(arrayBuffer: ArrayBufferLike): string {
   for (let i = 0; i < bytes.byteLength; i++) {
     str += String.fromCharCode(bytes[i])
   }
-  return window
-    .btoa(str)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
 async function generateCodeChallengeFromVerifier(
@@ -145,10 +161,11 @@ export function parseJwt(token: string): { [key: string]: any } | null {
     var base64Url = token.split('.')[1]
     var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
     var jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
+      atob(base64)
         .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        })
         .join('')
     )
 

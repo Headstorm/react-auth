@@ -13,6 +13,7 @@ export interface AuthRequestState {
 export interface AuthCallbackError {
   error: string
   errorDescription: string
+  retry: boolean
 }
 
 export const useAuthCallback = () => {
@@ -43,12 +44,27 @@ export const useAuthCallback = () => {
       setCallbackError({
         error: error,
         errorDescription: errorDescription,
+        retry: false,
       })
       return
     }
 
-    if (!code || !state) {
+    if (!code) {
+      setCallbackError({
+        error: 'code_missing',
+        errorDescription: 'The authorization code was not found.',
+        retry: true,
+      })
+
       return
+    }
+
+    if (!state) {
+      setCallbackError({
+        error: 'state_missing',
+        errorDescription: 'No state was found.',
+        retry: true,
+      })
     }
 
     const requestState = getAuthRequestState<AuthRequestState>()
@@ -62,6 +78,7 @@ export const useAuthCallback = () => {
         error: 'Invalid State',
         errorDescription:
           'State received does not match the previously generated state.',
+        retry: true,
       })
       return
     }
