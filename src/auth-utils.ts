@@ -9,16 +9,13 @@ export interface AuthTokens {
   expiresIn: number
 }
 
+const alphabet =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
 function randomId(length: number): string {
-  const alphabet =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-
-  let result = ''
-  for (var i = 0; i < length; i++) {
-    result += alphabet.charAt(Math.floor(Math.random() * alphabet.length))
-  }
-
-  return result
+  const array = new Uint32Array(length)
+  window.crypto.getRandomValues(array)
+  return Array.from(array, (dec) => alphabet[dec % alphabet.length]).join('')
 }
 
 export async function getAuthorizationRequest({

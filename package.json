@@ -1,6 +1,6 @@
 {
   "name": "@headstorm/react-auth",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "OAuth2 + OpenID connect client library for React with support for authorization code flow with PKCE",
   "main": "dist/react-auth.min.js",
   "types": "dist/react-auth.d.ts",
